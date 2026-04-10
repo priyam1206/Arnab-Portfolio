@@ -1,7 +1,12 @@
-from flask import Flask, render_template, jsonify, request
+from functools import wraps
+from flask import Flask, render_template, jsonify, request, redirect, session, url_for
 import sqlite3
 
 app = Flask(__name__)
+app.secret_key = "arnab-portfolio-session-key"
+
+ADMIN_USERNAME = "Arnab"
+ADMIN_PASSWORD = "@arnab2005"
 
 PORTFOLIO_DATA = {
     "profile": {
@@ -58,12 +63,43 @@ def init_db():
 
 init_db()
 
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not session.get("is_authenticated"):
+            return redirect(url_for("login", next=request.path))
+        return view(*args, **kwargs)
+    return wrapped_view
+
 # ---------- ROUTES ----------
 @app.route('/')
 def home():
     return render_template('index.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    next_page = request.args.get("next") or request.form.get("next") or url_for("messages_page")
+
+    if session.get("is_authenticated"):
+        return redirect(next_page)
+
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session["is_authenticated"] = True
+            session["username"] = ADMIN_USERNAME
+            return redirect(next_page)
+
+        error = "Invalid username or password."
+
+    return render_template('login.html', error=error, next_page=next_page)
+
 @app.route('/messages')
+@login_required
 def messages_page():
     conn = sqlite3.connect('messages.db')
     c = conn.cursor()
@@ -71,6 +107,11 @@ def messages_page():
     data = c.fetchall()
     conn.close()
     return render_template('messages.html', messages=data)
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 @app.route('/api/contact', methods=['POST'])
 def contact():

@@ -2,22 +2,34 @@
 <html>
 <head>
     <title>Messages</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
-<div class="container" style="padding-top:100px;">
-    <h1>Messages</h1>
+<div class="container panel-shell">
+    <div class="panel-header">
+        <div>
+            <p class="panel-kicker">Private Inbox</p>
+            <h1>Messages</h1>
+        </div>
+        <form action="{{ url_for('logout') }}" method="post">
+            <button type="submit" class="btn btn-ghost panel-btn">Logout</button>
+        </form>
+    </div>
 
     {% for m in messages %}
-    <div class="card">
-        <h3>{{ m[1] }} ({{ m[2] }})</h3>
+    <article class="glass-card message-card">
+        <h3>{{ m[1] }}</h3>
+        <p class="message-email">{{ m[2] }}</p>
         <p>{{ m[3] }}</p>
-    </div>
+    </article>
     {% endfor %}
 
     {% if messages|length == 0 %}
-        <p>No messages yet</p>
+        <p class="empty-state">No messages yet.</p>
     {% endif %}
 </div>
 </body>
